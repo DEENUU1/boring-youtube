@@ -53,6 +53,22 @@ def transcription(filename: str) -> str:
     return result["text"]
 
 
+def find_folder(folder_name, search_path):
+    """
+    Search for folder in specified directory
+    """
+    for item in os.listdir(search_path):
+        item_path = os.path.join(search_path, item)
+        if os.path.isdir(item_path):
+            if item == folder_name:
+                return item_path
+            else:
+                result = find_folder(folder_name, item_path)
+                if result:
+                    return result
+    return None
+
+
 if __name__ == "__main__":
     path, hashed_dir = download_audio(YOUTUBE_VIDEO_URL)
     print(f"File saved in {path} directory.")
