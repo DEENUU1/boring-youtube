@@ -1,4 +1,9 @@
+import os
+
 import pytube
+
+YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
+OUTPUT_PATH = "downloads"
 
 
 def download_audio(url):
@@ -7,13 +12,11 @@ def download_audio(url):
     """
     yt_video = pytube.YouTube(url)
     audio_stream = yt_video.streams.filter(only_audio=True).first()
-    audio_file_path = audio_stream.download()
+    audio_file_path = audio_stream.download(output_path=OUTPUT_PATH)
 
     return audio_file_path
 
 
 if __name__ == "__main__":
-    YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
-
     da = download_audio(YOUTUBE_VIDEO_URL)
     print(f"File saved in {da} directory.")
