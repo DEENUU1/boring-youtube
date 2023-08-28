@@ -3,6 +3,7 @@ import hashlib
 import pytube
 from typing import Tuple
 import ffmpeg
+import whisper
 
 
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
@@ -41,6 +42,15 @@ def process_to_wav(hashed_dir: str, file_name: str):
         input_file, "processed_audio.wav", acodec="pcm_s16le", ac=1, ar="16k"
     )
     ffmpeg.run(output_file)
+
+
+def transcription(filename: str) -> str:
+    """
+    Generate a transcription of a audio file
+    """
+    model = whisper.load_model("base")
+    result = model.transcribe(filename)
+    return result["text"]
 
 
 if __name__ == "__main__":
