@@ -33,14 +33,21 @@ def download_audio(url: str) -> Tuple[str, str]:
     return audio_file_path, directory
 
 
-def process_to_wav(hashed_dir: str, file_name: str):
+def process_to_wav(path: str):
     """
     Process audio file in format .mp4 to .wav
     """
-    input_file = ffmpeg.input(file_name)
-    output_file = ffmpeg.output(
-        input_file, "processed_audio.wav", acodec="pcm_s16le", ac=1, ar="16k"
+    input_file = ffmpeg.input(path)
+
+    folder_path, file_name = os.path.split(path)
+    output_file_path = os.path.join(
+        folder_path, os.path.splitext(file_name)[0] + ".wav"
     )
+
+    output_file = ffmpeg.output(
+        input_file, output_file_path, acodec="pcm_s16le", ac=1, ar="16k"
+    )
+
     ffmpeg.run(output_file)
 
 
@@ -72,3 +79,18 @@ def find_folder(folder_name, search_path):
 if __name__ == "__main__":
     path, hashed_dir = download_audio(YOUTUBE_VIDEO_URL)
     print(f"File saved in {path} directory.")
+
+    video_dir = find_folder(hashed_dir, OUTPUT_PATH)
+
+    # Try to make a transcription
+    try:
+        transcr = transcription(path)
+    except RuntimeError:
+        process_to_wav(path)
+    except MemoryError:
+        process_to_wav(path)
+
+    # if RuntimeError occurs:
+    # process file to .wav file
+    # Split .wav file into chunks
+    # Run transcription on each chunk
