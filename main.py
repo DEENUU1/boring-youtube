@@ -4,6 +4,7 @@ import pytube
 from typing import Tuple
 import ffmpeg
 import whisper
+from pydub import AudioSegment
 
 
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
@@ -76,6 +77,23 @@ def find_folder(folder_name, search_path):
     return None
 
 
+def chunk(path: str):
+    """
+    Split long video into the n chunks
+    """
+    audio = AudioSegment.from_wav(path)
+
+    print(f"Oryginal audio length is {len(audio)/1000} seconds")
+
+    chunk_lenght = 300 * 1000  # 5 minuts (300 seconds)
+    chunks = [audio[i : i + chunk_lenght] for i in range(0, len(audio), chunk_lenght)]
+
+    for i, chunk in enumerate(chunks):
+        chunk.export(f"chunk_{i}.wav", format="wav")
+
+    print(f"Saved {len(chunks)} chunks")
+
+
 if __name__ == "__main__":
     path, hashed_dir = download_audio(YOUTUBE_VIDEO_URL)
     print(f"File saved in {path} directory.")
@@ -90,7 +108,5 @@ if __name__ == "__main__":
     except MemoryError:
         process_to_wav(path)
 
-    # if RuntimeError occurs:
-    # process file to .wav file
     # Split .wav file into chunks
     # Run transcription on each chunk
