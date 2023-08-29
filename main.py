@@ -1,10 +1,11 @@
 import os
 import hashlib
 import pytube
-from typing import Tuple
+from typing import Tuple, List
 import ffmpeg
 import whisper
 from pydub import AudioSegment
+import tiktoken
 
 
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
@@ -96,6 +97,19 @@ def chunk(input_path: str, save_path: str) -> None:
         chunk.export(os.path.join(save_path, f"chunk_{i}.wav"), format="wav")
 
     print(f"Saved {len(chunks)} chunks")
+
+
+def chunk_text(text: str) -> List[str]:
+    """
+    Split text into chunks of 4096 tokens
+    """
+    encoder = tiktoken.get_encoding("cl100k_base")
+    text = []
+    text_tokens = encoder.encode(text)
+    for i in range(0, len(text_tokens), 4096):
+        text.append(encoder.decode(text_tokens[i : i + 4096]))
+
+    return text
 
 
 if __name__ == "__main__":
