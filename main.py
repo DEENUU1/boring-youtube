@@ -18,7 +18,7 @@ def generate_hashed_path(default_filename: str) -> str:
     return hashlib.sha256(default_filename.encode()).hexdigest()
 
 
-def download_audio(url: str) -> Tuple[str, str]:
+def download_audio(url: str) -> Tuple[str, str, int]:
     """
     Download only audio from youtube video and save in .mp4 format
     """
@@ -31,10 +31,12 @@ def download_audio(url: str) -> Tuple[str, str]:
     output_file_path = os.path.join(OUTPUT_PATH, directory)
 
     audio_file_path = audio_stream.download(output_path=output_file_path)
-    return audio_file_path, directory
+
+    audio_length = yt_video.length
+    return audio_file_path, directory, audio_length
 
 
-def process_to_wav(path: str):
+def process_to_wav(path: str) -> str:
     """
     Process audio file in format .mp4 to .wav
     """
@@ -50,6 +52,8 @@ def process_to_wav(path: str):
     )
 
     ffmpeg.run(output_file)
+
+    return output_file_path
 
 
 def transcription(filename: str) -> str:
@@ -77,11 +81,11 @@ def find_folder(folder_name, search_path):
     return None
 
 
-def chunk(path: str):
+def chunk(input_path: str, save_path: str) -> None:
     """
     Split long video into the n chunks
     """
-    audio = AudioSegment.from_wav(path)
+    audio = AudioSegment.from_wav(input_path)
 
     print(f"Oryginal audio length is {len(audio)/1000} seconds")
 
@@ -89,28 +93,25 @@ def chunk(path: str):
     chunks = [audio[i : i + chunk_lenght] for i in range(0, len(audio), chunk_lenght)]
 
     for i, chunk in enumerate(chunks):
-        chunk.export(f"chunk_{i}.wav", format="wav")
+        chunk.export(os.path.join(save_path, f"chunk_{i}.wav"), format="wav")
 
     print(f"Saved {len(chunks)} chunks")
 
 
 if __name__ == "__main__":
-    path, hashed_dir = download_audio(YOUTUBE_VIDEO_URL)
+    path, hashed_dir, length = download_audio(YOUTUBE_VIDEO_URL)
     print(f"File saved in {path} directory.")
 
     video_dir = find_folder(hashed_dir, OUTPUT_PATH)
 
     full_transcription = []
-    # Try to make a transcription
-    try:
+
+    if length <= 20:
         transcr = transcription(path)
         full_transcription.append(transcr)
-    except RuntimeError:
-        process_to_wav(path)
-    except MemoryError:
-        process_to_wav(path)
-
-        # find all files in video_dir which starts from "chunk" and ends with ".wav"
+    else:
+        wav = process_to_wav(path)
+        chunk(wav, video_dir)
         chunk_files = [
             os.path.join(video_dir, f)
             for f in os.listdir(video_dir)
@@ -120,5 +121,4 @@ if __name__ == "__main__":
             transcr = transcription(chunk_file)
             full_transcription.append(transcr)
 
-    # Split .wav file into chunks
-    # Run transcription on each chunk
+    print(" ".join(full_transcription))
