@@ -100,13 +100,25 @@ if __name__ == "__main__":
 
     video_dir = find_folder(hashed_dir, OUTPUT_PATH)
 
+    full_transcription = []
     # Try to make a transcription
     try:
         transcr = transcription(path)
+        full_transcription.append(transcr)
     except RuntimeError:
         process_to_wav(path)
     except MemoryError:
         process_to_wav(path)
+
+        # find all files in video_dir which starts from "chunk" and ends with ".wav"
+        chunk_files = [
+            os.path.join(video_dir, f)
+            for f in os.listdir(video_dir)
+            if f.startswith("chunk") and f.endswith(".wav")
+        ]
+        for chunk_file in chunk_files:
+            transcr = transcription(chunk_file)
+            full_transcription.append(transcr)
 
     # Split .wav file into chunks
     # Run transcription on each chunk
