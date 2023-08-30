@@ -5,11 +5,26 @@ from typing import Tuple, List
 import ffmpeg
 import whisper
 from pydub import AudioSegment
-import tiktoken
+import textwrap
+from dotenv import load_dotenv
+from langchain import PromptTemplate, HuggingFaceHub, LLMChain
 
 
-YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=Fv_3IfieHuU&t=11s"
+load_dotenv()
+
+
+YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=5a4_kZf5R4o"
 OUTPUT_PATH = "downloads"
+TEMPLATE = "{text}"
+
+PROMPT = PromptTemplate(template=TEMPLATE, input_variables=["text"])
+llm_chain = LLMChain(
+    prompt=PROMPT,
+    llm=HuggingFaceHub(
+        repo_id="facebook/bart-large-cnn",
+        model_kwargs={"temperature": 0, "max_length": 64},
+    ),
+)
 
 
 def generate_hashed_path(default_filename: str) -> str:
@@ -99,17 +114,11 @@ def chunk(input_path: str, save_path: str) -> None:
     print(f"Saved {len(chunks)} chunks")
 
 
-def chunk_text(text: str) -> List[str]:
+def return_text_chunk(text: str) -> List[str]:
     """
-    Split text into chunks of 4096 tokens
+    Split a large text into 4000 token objects in a list
     """
-    encoder = tiktoken.get_encoding("cl100k_base")
-    text = []
-    text_tokens = encoder.encode(text)
-    for i in range(0, len(text_tokens), 4096):
-        text.append(encoder.decode(text_tokens[i : i + 4096]))
-
-    return text
+    return textwrap.wrap(text, 100)
 
 
 if __name__ == "__main__":
@@ -120,19 +129,31 @@ if __name__ == "__main__":
 
     full_transcription = []
 
-    if length <= 20:
-        transcr = transcription(path)
+    # if length <= 20:
+    #     transcr = transcription(path)
+    #     full_transcription.append(transcr)
+    # else:
+    wav = process_to_wav(path)
+    chunk(wav, video_dir)
+    chunk_files = [
+        os.path.join(video_dir, f)
+        for f in os.listdir(video_dir)
+        if f.startswith("chunk") and f.endswith(".wav")
+    ]
+    for chunk_file in chunk_files:
+        transcr = transcription(chunk_file)
+        print(transcr)
         full_transcription.append(transcr)
-    else:
-        wav = process_to_wav(path)
-        chunk(wav, video_dir)
-        chunk_files = [
-            os.path.join(video_dir, f)
-            for f in os.listdir(video_dir)
-            if f.startswith("chunk") and f.endswith(".wav")
-        ]
-        for chunk_file in chunk_files:
-            transcr = transcription(chunk_file)
-            full_transcription.append(transcr)
+
+    text_str = " ".join(full_transcription)
+
+    chunk_text = return_text_chunk(text_str)
+
+    for idx, t in enumerate(chunk_text):
+        summary = llm_chain.run(t)
+        full_transcription.append(summary)
+
+        print(f"Summary {idx}/{len(chunk_text)}")
+        print(summary)
 
     print(" ".join(full_transcription))
