@@ -21,7 +21,7 @@ PROMPT = PromptTemplate(template=TEMPLATE, input_variables=["text"])
 llm_chain = LLMChain(
     prompt=PROMPT,
     llm=HuggingFaceHub(
-        repo_id="facebook/bart-large-cnn",
+        repo_id="philschmid/bart-large-cnn-samsum",
         model_kwargs={"temperature": 0, "max_length": 64},
     ),
 )
@@ -118,7 +118,7 @@ def return_text_chunk(text: str) -> List[str]:
     """
     Split a large text into 4000 token objects in a list
     """
-    return textwrap.wrap(text, 100)
+    return textwrap.wrap(text, 2000)
 
 
 if __name__ == "__main__":
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     video_dir = find_folder(hashed_dir, OUTPUT_PATH)
 
     full_transcription = []
-
+    full_summary = []
     # if length <= 20:
     #     transcr = transcription(path)
     #     full_transcription.append(transcr)
@@ -151,9 +151,9 @@ if __name__ == "__main__":
 
     for idx, t in enumerate(chunk_text):
         summary = llm_chain.run(t)
-        full_transcription.append(summary)
+        full_summary.append(summary)
 
         print(f"Summary {idx}/{len(chunk_text)}")
         print(summary)
 
-    print(" ".join(full_transcription))
+    print(" ".join(full_summary))
