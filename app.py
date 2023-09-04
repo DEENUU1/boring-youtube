@@ -25,8 +25,10 @@ class App(ctk.CTk):
         self.url_entry = ctk.CTkEntry(self, font=("Helvetica", 16))
         self.url_entry.pack()
 
-        text_label = ctk.CTkLabel(self, text="Some text...", font=("Helvetica", 16))
-        text_label.pack(pady=20)
+        self.text_label = ctk.CTkLabel(
+            self, text="Some text...", font=("Helvetica", 16)
+        )
+        self.text_label.pack(pady=20)
 
         run_button = ctk.CTkButton(self, text="Run", command=self.run_button_clicked)
         run_button.pack()
@@ -61,10 +63,15 @@ class App(ctk.CTk):
             ]
             for chunk_file in chunk_files:
                 transcr = transcription(chunk_file)
-                print(transcr)
+
+                self.text_label.configure(text=transcr)
+                self.update()
+
                 full_transcription.append(transcr)
 
             text_str = " ".join(full_transcription)
+            self.text_label.configure(text=text_str)
+            self.update()
 
             chunk_text = return_text_chunk(text_str)
 
@@ -72,10 +79,10 @@ class App(ctk.CTk):
                 summary = llm_chain.run(t)
                 full_summary.append(summary)
 
-                print(f"Summary {idx}/{len(chunk_text)}")
-                print(summary)
+                self.text_label.configure(text=summary)
+                self.update()
 
-            print(" ".join(full_summary))
-
+            self.text_label.configure(" ".join(full_summary))
+            self.update()
         except Exception as e:
             messagebox.showerror("Error", str(e))
