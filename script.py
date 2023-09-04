@@ -12,8 +12,6 @@ from langchain import PromptTemplate, HuggingFaceHub, LLMChain
 
 load_dotenv()
 
-
-YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v=5a4_kZf5R4o"
 OUTPUT_PATH = "downloads"
 TEMPLATE = "{text}"
 
@@ -119,41 +117,3 @@ def return_text_chunk(text: str) -> List[str]:
     Split a large text into 4000 token objects in a list
     """
     return textwrap.wrap(text, 2000)
-
-
-if __name__ == "__main__":
-    path, hashed_dir, length = download_audio(YOUTUBE_VIDEO_URL)
-    print(f"File saved in {path} directory.")
-
-    video_dir = find_folder(hashed_dir, OUTPUT_PATH)
-
-    full_transcription = []
-    full_summary = []
-    # if length <= 20:
-    #     transcr = transcription(path)
-    #     full_transcription.append(transcr)
-    # else:
-    wav = process_to_wav(path)
-    chunk(wav, video_dir)
-    chunk_files = [
-        os.path.join(video_dir, f)
-        for f in os.listdir(video_dir)
-        if f.startswith("chunk") and f.endswith(".wav")
-    ]
-    for chunk_file in chunk_files:
-        transcr = transcription(chunk_file)
-        print(transcr)
-        full_transcription.append(transcr)
-
-    text_str = " ".join(full_transcription)
-
-    chunk_text = return_text_chunk(text_str)
-
-    for idx, t in enumerate(chunk_text):
-        summary = llm_chain.run(t)
-        full_summary.append(summary)
-
-        print(f"Summary {idx}/{len(chunk_text)}")
-        print(summary)
-
-    print(" ".join(full_summary))
