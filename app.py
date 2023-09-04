@@ -1,6 +1,5 @@
 import customtkinter as ctk
-from tkinter import messagebox
-import re
+from tkinter import messagebox, Canvas, Scrollbar, VERTICAL
 from script import (
     download_audio,
     process_to_wav,
@@ -10,8 +9,15 @@ from script import (
     find_folder,
     OUTPUT_PATH,
     llm_chain,
+    valid_url,
+    update_full_text,
 )
 import os
+
+
+full_text = []
+full_transcription = []
+full_summary = []
 
 
 class App(ctk.CTk):
@@ -19,41 +25,57 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("Boring Youtube")
-        self.geometry("600x400")
+        self.geometry("1000x800")
         self.resizable(False, False)
+        ctk.set_appearance_mode("light")
 
-        self.url_entry = ctk.CTkEntry(self, font=("Helvetica", 16))
-        self.url_entry.pack()
+        self.url_frame = ctk.CTkFrame(self)
+        self.url_frame.pack(pady=10)
 
-        self.text_label = ctk.CTkLabel(
-            self, text="Some text...", font=("Helvetica", 16)
+        self.url_entry = ctk.CTkEntry(
+            self.url_frame,
+            font=("Helvetica", 16),
+            width=400,
+            placeholder_text="Youtube video URL",
         )
-        self.text_label.pack(pady=20)
+        self.url_entry.pack(side="left")
 
         run_button = ctk.CTkButton(self, text="Run", command=self.run_button_clicked)
-        run_button.pack()
+        run_button.pack(pady=10)
 
-    def valid_url(self, url: str) -> bool:
-        youtube_url_pattern = re.compile(
-            r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
+        self.canvas = Canvas(self)
+        self.canvas.pack(fill="both", expand=True)
+
+        self.text_label = self.canvas.create_text(
+            10,
+            10,
+            anchor="nw",
+            font=("Helvetica", 16),
+            text="Please wait...",
+            width=760,
+            fill="black",
         )
-        return bool(youtube_url_pattern.match(url))
+
+        scrollbar = Scrollbar(self, orient=VERTICAL, command=self.canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
     def run_button_clicked(self):
         url = self.url_entry.get()
 
-        if not url or not self.valid_url(url):
+        if not url or not valid_url(url):
             messagebox.showerror("Error", "Please enter a valid URL.")
 
         try:
             path, hashed_dir, length = download_audio(url)
-            print(f"File saved in {path} directory.")
+            messagebox.showinfo("Success", f"Downloaded audio file to {path}")
 
+            # if length <= 20:
+            #     pass
+            # else:
+
+            # Process to wav and chunk the video
             video_dir = find_folder(hashed_dir, OUTPUT_PATH)
-
-            full_transcription = []
-            full_summary = []
-
             wav = process_to_wav(path)
             chunk(wav, video_dir)
             chunk_files = [
@@ -61,28 +83,31 @@ class App(ctk.CTk):
                 for f in os.listdir(video_dir)
                 if f.startswith("chunk") and f.endswith(".wav")
             ]
+
+            # Make transcription
             for chunk_file in chunk_files:
                 transcr = transcription(chunk_file)
 
-                self.text_label.configure(text=transcr)
-                self.update()
-
                 full_transcription.append(transcr)
+                update_full_text(full_text, transcr)
+
+                # Update text_label in tkinter app
+                self.canvas.itemconfig(self.text_label, text=full_text)
+                self.update()
 
             text_str = " ".join(full_transcription)
-            self.text_label.configure(text=text_str)
-            self.update()
-
             chunk_text = return_text_chunk(text_str)
 
-            for idx, t in enumerate(chunk_text):
+            # Make summary
+            for t in chunk_text:
                 summary = llm_chain.run(t)
-                full_summary.append(summary)
 
-                self.text_label.configure(text=summary)
+                full_summary.append(summary)
+                update_full_text(full_text, summary)
+
+                # Update text_label in tkinter app
+                self.canvas.itemconfig(self.text_label, text=full_text)
                 self.update()
 
-            self.text_label.configure(" ".join(full_summary))
-            self.update()
         except Exception as e:
             messagebox.showerror("Error", str(e))

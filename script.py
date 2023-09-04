@@ -8,7 +8,7 @@ from pydub import AudioSegment
 import textwrap
 from dotenv import load_dotenv
 from langchain import PromptTemplate, HuggingFaceHub, LLMChain
-
+import re
 
 load_dotenv()
 
@@ -117,3 +117,22 @@ def return_text_chunk(text: str) -> List[str]:
     Split a large text into 4000 token objects in a list
     """
     return textwrap.wrap(text, 2000)
+
+
+def valid_url(url: str) -> bool:
+    """
+    Check if youtube video url is correct
+    """
+    youtube_url_pattern = re.compile(
+        r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
+    )
+    return bool(youtube_url_pattern.match(url))
+
+
+def update_full_text(full_text: List[str], text: str) -> List[str]:
+    """
+    Update list with full text (Transcription and Summary)
+    """
+    enter = ["\n" * 5]
+    full_text.append(text)
+    full_text.extend(enter)
