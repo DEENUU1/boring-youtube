@@ -136,3 +136,12 @@ def update_full_text(full_text: List[str], text: str) -> List[str]:
     enter = ["\n" * 5]
     full_text.append(text)
     full_text.extend(enter)
+
+
+def save_to_txt(text: str, filename: str) -> None:
+    """
+    Save text to .txt file
+    """
+
+    with open(filename, "w") as file:
+        file.write(text)
