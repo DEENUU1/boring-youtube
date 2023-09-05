@@ -86,6 +86,13 @@ git clone <link>
 pip install -r requirements.txt
 ```
 
+Add .env file and implement your huggingface API Key
+```txt
+HUGGINGFACEHUB_API_TOKEN=<YOUR_API_KEY_HERE>
+```
+Do not change the name of this variable!
+
+
 ```commandline
 python main.py
 ```
