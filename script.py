@@ -145,3 +145,10 @@ def save_to_txt(text: str, filename: str) -> None:
 
     with open(filename, "w") as file:
         file.write(text)
+
+
+def return_filename(str_path: str) -> str:
+    """
+    Return filename from the given path
+    """
+    return os.path.basename(str_path)

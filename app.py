@@ -12,6 +12,7 @@ from script import (
     valid_url,
     update_full_text,
     save_to_txt,
+    return_filename,
 )
 import os
 
@@ -77,6 +78,7 @@ class App(ctk.CTk):
 
         try:
             path, hashed_dir, length = download_audio(url)
+            filename = return_filename(path.replace(" ", ""))
 
             messagebox.showinfo("Success", f"Downloaded audio file to {path}")
 
@@ -94,7 +96,10 @@ class App(ctk.CTk):
                 self.update()
 
                 text_str = " ".join(full_transcription)
-                save_to_txt(text_str, "transcription.txt")
+                # Save transcription to .txt file
+                save_to_txt(text_str, f"transcription_{filename}.txt")
+
+                # Chunk text into 2000 words
                 chunk_text = return_text_chunk(text_str)
 
                 # Make summary
@@ -107,6 +112,11 @@ class App(ctk.CTk):
                     # Update text_label in tkinter app
                     self.canvas.itemconfig(self.text_label, text=full_text)
                     self.update()
+
+                full_summary_str = "".join(full_summary)
+                # Save summary to .txt file
+                save_to_txt(full_summary_str, f"summary_{filename}.txt")
+
             else:
                 # Process to wav and chunk the video
                 video_dir = find_folder(hashed_dir, OUTPUT_PATH)
@@ -130,6 +140,10 @@ class App(ctk.CTk):
                     self.update()
 
                 text_str = " ".join(full_transcription)
+                # Save transcription to .txt file
+                save_to_txt(text_str, f"transcription_{filename}.txt")
+
+                # Chunk text into 2000 words
                 chunk_text = return_text_chunk(text_str)
 
                 # Make summary
@@ -142,6 +156,10 @@ class App(ctk.CTk):
                     # Update text_label in tkinter app
                     self.canvas.itemconfig(self.text_label, text=full_text)
                     self.update()
+
+                full_summary_str = "".join(full_summary)
+                # Save summary to .txt fil
+                save_to_txt(full_summary_str, f"summary_{filename}.txt")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
